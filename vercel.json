@@ -11,10 +11,5 @@
       "src": "/api/check_price",
       "dest": "/api/check_price.py"
     }
-  ],
-  "env": {
-    "GEMINI_KEY": "@gemini_key",
-    "OXYLABS_USERNAME": "@oxylabs_username",
-    "OXYLABS_PASSWORD": "@oxylabs_password"
-  }
+  ]
 }
