@@ -132,7 +132,8 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
             'parse': True,
             'domain': 'com.mx',
             'locale': 'es',
-            'geo_location': 'Mexico'
+            'geo_location': 'Mexico',
+            'pages': 3  # Obtener hasta 3 páginas de resultados
         }
 
         print(f"🛒 Oxylabs Shopping Search: {query}")
@@ -141,7 +142,7 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
             'https://realtime.oxylabs.io/v1/queries',
             auth=(OXYLABS_USERNAME, OXYLABS_PASSWORD),
             json=payload,
-            timeout=30
+            timeout=45  # Mayor timeout para múltiples páginas
         )
 
         if response.status_code != 200:
@@ -150,24 +151,38 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
 
         data = response.json()
         results = []
+        seen_urls = set()  # Para evitar duplicados
 
-        # Extraer resultados de shopping
-        if 'results' in data and len(data['results']) > 0:
-            parsed_data = data['results'][0].get('content', {})
-            organic = parsed_data.get('results', {}).get('organic', [])
+        # Extraer resultados de shopping de todas las páginas
+        if 'results' in data:
+            for result_page in data['results']:
+                parsed_data = result_page.get('content', {})
+                organic = parsed_data.get('results', {}).get('organic', [])
 
-            for item in organic[:15]:  # Primeros 15 productos
-                price = item.get('price')
-                results.append({
-                    'title': item.get('title', ''),
-                    'price': _normalize_price(price) if price else None,
-                    'currency': item.get('currency', 'MXN'),
-                    'seller': item.get('merchant', {}).get('name', 'Desconocido'),
-                    'link': item.get('url', ''),
-                    'source': 'oxylabs_shopping'
-                })
+                for item in organic:
+                    price = item.get('price')
+                    url = item.get('url', '')
 
-        print(f"✅ Oxylabs Shopping encontró {len(results)} productos")
+                    # Skip si no tiene precio o ya lo vimos
+                    if not price or url in seen_urls:
+                        continue
+
+                    seen_urls.add(url)
+
+                    results.append({
+                        'title': item.get('title', ''),
+                        'price': _normalize_price(price),
+                        'currency': item.get('currency', 'MXN'),
+                        'seller': item.get('merchant', {}).get('name', 'Desconocido'),
+                        'link': url,
+                        'source': 'oxylabs_shopping'
+                    })
+
+                # Limitar a 30 resultados máximo
+                if len(results) >= 30:
+                    break
+
+        print(f"✅ Oxylabs Shopping encontró {len(results)} productos únicos")
         return results
 
     except Exception as e:
