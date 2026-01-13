@@ -4,9 +4,17 @@
     {
       "src": "api/check_price.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/health.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/health.py"
+    },
     {
       "src": "/api/check_price",
       "dest": "/api/check_price.py"
