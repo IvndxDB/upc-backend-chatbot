@@ -36,7 +36,7 @@ if sys.platform == 'win32':
 
 # Obtener credenciales desde variables de entorno (configuradas en Vercel)
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_KEY = os.environ.get('GEMINI_KEY', '')
 PERPLEXITY_API_KEY = os.environ.get('PERPLEXITY_API_KEY', '')
 OXYLABS_USERNAME = os.environ.get('OXYLABS_USERNAME', '')
 OXYLABS_PASSWORD = os.environ.get('OXYLABS_PASSWORD', '')
@@ -88,7 +88,7 @@ except ImportError:
 
 try:
     import google.generativeai as genai
-    genai.configure(api_key=GEMINI_API_KEY)
+    genai.configure(api_key=GEMINI_KEY)
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
@@ -378,7 +378,7 @@ RESPONDE AHORA SOLO CON EL JSON:"""
 
 def search_prices_gemini(product_info: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Busca precios usando Gemini - NOTA: No tiene busqueda web, usa conocimiento del modelo"""
-    if not GEMINI_AVAILABLE or not GEMINI_API_KEY:
+    if not GEMINI_AVAILABLE or not GEMINI_KEY:
         log("GEMINI", "No disponible o sin API key")
         return []
 
@@ -1911,7 +1911,7 @@ def health():
     return jsonify({
         'status': 'healthy',
         'claude': bool(ANTHROPIC_API_KEY),
-        'gemini': GEMINI_AVAILABLE and bool(GEMINI_API_KEY),
+        'gemini': GEMINI_AVAILABLE and bool(GEMINI_KEY),
         'perplexity': REQUESTS_AVAILABLE and bool(PERPLEXITY_API_KEY),
         'oxylabs': REQUESTS_AVAILABLE and bool(OXYLABS_USERNAME)
     })
@@ -2137,7 +2137,7 @@ if __name__ == '__main__':
     print("DATABUNKER PRICE CHECKER API v2.0")
     print("="*60)
     print(f"Claude:     {'OK' if ANTHROPIC_API_KEY else 'NO'}")
-    print(f"Gemini:     {'OK' if GEMINI_AVAILABLE and GEMINI_API_KEY else 'NO'}")
+    print(f"Gemini:     {'OK' if GEMINI_AVAILABLE and GEMINI_KEY else 'NO'}")
     print(f"Perplexity: {'OK' if REQUESTS_AVAILABLE and PERPLEXITY_API_KEY else 'NO'}")
     print(f"Oxylabs:    {'OK' if REQUESTS_AVAILABLE and OXYLABS_USERNAME else 'NO'}")
     print("="*60 + "\n")
