@@ -8,6 +8,7 @@ class handler(BaseHTTPRequestHandler):
 
         # Check which env vars are set (without exposing values)
         env_status = {
+            'GEMINI_KEY': 'SET' if os.environ.get('GEMINI_KEY') else 'NOT SET',
             'GEMINI_API_KEY': 'SET' if os.environ.get('GEMINI_API_KEY') else 'NOT SET',
             'OXYLABS_USERNAME': 'SET' if os.environ.get('OXYLABS_USERNAME') else 'NOT SET',
             'OXYLABS_PASSWORD': 'SET' if os.environ.get('OXYLABS_PASSWORD') else 'NOT SET',

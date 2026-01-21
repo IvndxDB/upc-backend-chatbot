@@ -7,7 +7,8 @@ import base64
 from typing import List, Dict, Any, Optional
 
 # ===================== Configuración =====================
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+# Soportar ambos nombres de variables de entorno para Gemini
+GEMINI_API_KEY = os.environ.get('GEMINI_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
 OXYLABS_USERNAME = os.environ.get('OXYLABS_USERNAME', '')
 OXYLABS_PASSWORD = os.environ.get('OXYLABS_PASSWORD', '')
 
