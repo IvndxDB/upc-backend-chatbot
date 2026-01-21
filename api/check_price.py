@@ -147,16 +147,26 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
 
         if response.status_code != 200:
             print(f"❌ Oxylabs Shopping error: {response.status_code}")
+            print(f"Response body: {response.text[:500]}")
             return []
 
         data = response.json()
+        print(f"📊 Oxylabs response keys: {list(data.keys())}")
+
         results = []
         seen_urls = set()  # Para evitar duplicados
 
         # Extraer resultados de shopping
         if 'results' in data and len(data['results']) > 0:
+            print(f"📦 Found {len(data['results'])} result pages")
             parsed_data = data['results'][0].get('content', {})
-            organic = parsed_data.get('results', {}).get('organic', [])
+            print(f"📝 Parsed data keys: {list(parsed_data.keys()) if parsed_data else 'None'}")
+
+            results_section = parsed_data.get('results', {})
+            print(f"🔍 Results section keys: {list(results_section.keys()) if results_section else 'None'}")
+
+            organic = results_section.get('organic', [])
+            print(f"🛒 Found {len(organic)} organic results")
 
             for item in organic[:20]:  # Limitar a primeros 20 para velocidad
                 price = item.get('price')
