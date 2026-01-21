@@ -132,8 +132,8 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
             'parse': True,
             'domain': 'com.mx',
             'locale': 'es',
-            'geo_location': 'Mexico',
-            'pages': 3  # Obtener hasta 3 páginas de resultados
+            'geo_location': 'Mexico'
+            # No usamos 'pages' para evitar timeouts en Vercel Free (10s limit)
         }
 
         print(f"🛒 Oxylabs Shopping Search: {query}")
@@ -142,7 +142,7 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
             'https://realtime.oxylabs.io/v1/queries',
             auth=(OXYLABS_USERNAME, OXYLABS_PASSWORD),
             json=payload,
-            timeout=45  # Mayor timeout para múltiples páginas
+            timeout=8  # 8 segundos para dejar margen en Vercel Free
         )
 
         if response.status_code != 200:
@@ -153,34 +153,29 @@ def _search_with_oxylabs_shopping(query: str) -> List[Dict[str, Any]]:
         results = []
         seen_urls = set()  # Para evitar duplicados
 
-        # Extraer resultados de shopping de todas las páginas
-        if 'results' in data:
-            for result_page in data['results']:
-                parsed_data = result_page.get('content', {})
-                organic = parsed_data.get('results', {}).get('organic', [])
+        # Extraer resultados de shopping
+        if 'results' in data and len(data['results']) > 0:
+            parsed_data = data['results'][0].get('content', {})
+            organic = parsed_data.get('results', {}).get('organic', [])
 
-                for item in organic:
-                    price = item.get('price')
-                    url = item.get('url', '')
+            for item in organic[:20]:  # Limitar a primeros 20 para velocidad
+                price = item.get('price')
+                url = item.get('url', '')
 
-                    # Skip si no tiene precio o ya lo vimos
-                    if not price or url in seen_urls:
-                        continue
+                # Skip si no tiene precio o ya lo vimos
+                if not price or url in seen_urls:
+                    continue
 
-                    seen_urls.add(url)
+                seen_urls.add(url)
 
-                    results.append({
-                        'title': item.get('title', ''),
-                        'price': _normalize_price(price),
-                        'currency': item.get('currency', 'MXN'),
-                        'seller': item.get('merchant', {}).get('name', 'Desconocido'),
-                        'link': url,
-                        'source': 'oxylabs_shopping'
-                    })
-
-                # Limitar a 30 resultados máximo
-                if len(results) >= 30:
-                    break
+                results.append({
+                    'title': item.get('title', ''),
+                    'price': _normalize_price(price),
+                    'currency': item.get('currency', 'MXN'),
+                    'seller': item.get('merchant', {}).get('name', 'Desconocido'),
+                    'link': url,
+                    'source': 'oxylabs_shopping'
+                })
 
         print(f"✅ Oxylabs Shopping encontró {len(results)} productos únicos")
         return results
@@ -334,9 +329,25 @@ class handler(BaseHTTPRequestHandler):
                     'powered_by': 'oxylabs'
                 })
 
-            # Analizar con Gemini (si está disponible)
-            analysis = _analyze_with_gemini(results, upc, search_query)
-            analysis['powered_by'] = 'oxylabs + gemini' if GEMINI_AVAILABLE else 'oxylabs'
+            # Devolver resultados directamente sin Gemini (para velocidad en Vercel Free)
+            # TODO: Re-habilitar Gemini cuando se upgrade a Vercel Pro
+            offers = []
+            for item in results[:15]:
+                offers.append({
+                    'title': item.get('title', ''),
+                    'price': item.get('price'),
+                    'currency': item.get('currency', 'MXN'),
+                    'seller': item.get('seller', 'Desconocido'),
+                    'link': item.get('link', ''),
+                    'source': item.get('source', 'oxylabs')
+                })
+
+            analysis = {
+                'offers': offers,
+                'summary': f'Encontrados {len(offers)} resultados',
+                'total_offers': len(offers),
+                'powered_by': 'oxylabs'
+            }
 
             return self._send_success(analysis)
 
