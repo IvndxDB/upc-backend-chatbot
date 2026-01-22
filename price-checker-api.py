@@ -2,7 +2,7 @@
 price-checker-api.py - Backend API para DataBunker Price Checker Chrome Extension
 Orquesta busquedas de precios en tiempo real usando Gemini, Oxylabs y Perplexity
 """
-#first deploy on vercel try 2
+#redeploy railway
 
 import sys
 import io
